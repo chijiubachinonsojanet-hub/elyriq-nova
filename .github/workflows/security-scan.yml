@@ -1,0 +1,28 @@
+name: "Security Scan Pipeline"
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  security-audit:
+    name: Run Security Scans
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Secret Scanning (TruffleHog)
+        uses: trufflesecurity/trufflehog-oss-action@main
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
