@@ -251,7 +251,7 @@ export default function Home() {
       {/* ── PLATFORM CAPABILITIES ── */}
       <section style={{ padding: "120px 56px", background: "#F8F9FA" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <FadeUp className="text-center" style={{ textAlign: "center", marginBottom: "64px" }}>
+          <FadeUp className="text-center">
             <div style={{ textAlign: "center", marginBottom: "64px" }}>
               <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px" }}>Platform</p>
               <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A", marginBottom: "16px" }}>
