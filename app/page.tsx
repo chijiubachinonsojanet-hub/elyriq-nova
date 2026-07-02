@@ -19,8 +19,8 @@ function FadeUp({ children, delay = 0, className = "" }: {
   return (
     <div ref={ref} className={className} style={{
       opacity: inView ? 1 : 0,
-      transform: inView ? "translateY(0)" : "translateY(24px)",
-      transition: `all 0.8s ease ${delay}ms`,
+      transform: inView ? "translateY(24px)" : "translateY(0)",
+      animation: inView ? `fadeUpEffect 0.8s ease ${delay}ms forwards` : "none"
     }}>
       {children}
     </div>
@@ -60,95 +60,147 @@ const CLEANER_STEPS = [
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
+    const handleScroll = () => setScrolled(window.scrollY > 60);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 960);
+    };
+
+    handleResize();
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   return (
     <main style={{ background: "#F8F9FA", color: "#0D1B2A", fontFamily: "'Plus Jakarta Sans', Inter, Arial, sans-serif", overflowX: "hidden" }}>
+      
+      {/* Dynamic Keyframe Injection for the custom fade element */}
+      <style>{`
+        @keyframes fadeUpEffect {
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       {/* ── NAVBAR ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 56px", height: "68px",
-        background: scrolled ? "rgba(13,27,42,0.97)" : "#0D1B2A",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
+        padding: isMobile ? "0 20px" : "0 56px", height: "68px",
+        background: scrolled || mobileMenuOpen ? "rgba(13,27,42,0.97)" : "#0D1B2A",
+        backdropFilter: scrolled || mobileMenuOpen ? "blur(20px)" : "none",
+        borderBottom: scrolled || mobileMenuOpen ? "1px solid rgba(255,255,255,0.06)" : "none",
         transition: "all 0.4s ease",
       }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
           <Image src="/elyriq-nova-logo.jpeg" alt="Elyriq Nova" width={38} height={38} style={{ borderRadius: "50%" }} />
           <span style={{ fontWeight: 700, fontSize: "16px", color: "#fff", letterSpacing: "-0.01em" }}>Elyriq Nova</span>
         </a>
-        <div style={{ display: "flex", gap: "36px" }}>
+
+        {!isMobile && (
+          <>
+            <div style={{ display: "flex", gap: "36px" }}>
+              {NAV_LINKS.map(link => (
+                <a key={link} href="#" style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", textDecoration: "none", fontWeight: 500, transition: "color 0.2s" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}>
+                  {link}
+                </a>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <a href="/auth" style={{ padding: "9px 20px", fontSize: "14px", fontWeight: 600, borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+                Sign In
+              </a>
+              <a href="/auth" style={{ padding: "9px 20px", fontSize: "14px", fontWeight: 700, borderRadius: "8px", border: "none", background: "#FF3EA5", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+                Get Started
+              </a>
+            </div>
+          </>
+        )}
+
+        {isMobile && (
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ background: "transparent", border: "none", color: "#fff", fontSize: "24px", cursor: "pointer", padding: "4px" }}
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+        )}
+      </nav>
+
+      {/* ── MOBILE NAV MENU ── */}
+      {isMobile && mobileMenuOpen && (
+        <div style={{
+          position: "fixed", top: "68px", left: 0, right: 0, bottom: 0,
+          background: "#0D1B2A", zIndex: 99, display: "flex", flexDirection: "column",
+          padding: "30px 20px", gap: "24px", overflowY: "auto"
+        }}>
           {NAV_LINKS.map(link => (
-            <a key={link} href="#" style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", textDecoration: "none", fontWeight: 500, transition: "color 0.2s" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}>
+            <a key={link} href="#" onClick={() => setMobileMenuOpen(false)} style={{ color: "#fff", fontSize: "18px", textDecoration: "none", fontWeight: 500 }}>
               {link}
             </a>
           ))}
-        </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <a href="/auth" style={{ padding: "9px 20px", fontSize: "14px", fontWeight: 600, borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+          <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "10px 0" }} />
+          <a href="/auth" style={{ padding: "14px", textAlign: "center", fontSize: "16px", fontWeight: 600, borderRadius: "8px", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", textDecoration: "none" }}>
             Sign In
           </a>
-          <a href="/auth" style={{ padding: "9px 20px", fontSize: "14px", fontWeight: 700, borderRadius: "8px", border: "none", background: "#FF3EA5", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+          <a href="/auth" style={{ padding: "14px", textAlign: "center", fontSize: "16px", fontWeight: 700, borderRadius: "8px", background: "#FF3EA5", color: "#fff", textDecoration: "none" }}>
             Get Started
           </a>
         </div>
-      </nav>
+      )}
 
       {/* ── HERO ── */}
       <section style={{
         background: "#0D1B2A",
         minHeight: "100vh",
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
         alignItems: "center",
-        padding: "100px 56px 80px",
-        gap: "64px",
+        padding: isMobile ? "110px 20px 60px" : "100px 56px 80px",
+        gap: isMobile ? "40px" : "64px",
         maxWidth: "1400px",
         margin: "0 auto",
       }}>
         {/* LEFT */}
         <div>
           <FadeUp>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,62,165,0.12)", border: "1px solid rgba(255,62,165,0.25)", borderRadius: "999px", padding: "6px 14px", marginBottom: "32px" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,62,165,0.12)", border: "1px solid rgba(255,62,165,0.25)", borderRadius: "999px", padding: "6px 14px", marginBottom: "24px" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#FF3EA5" }} />
               <span style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em" }}>Africa&apos;s cleaning operations platform</span>
             </div>
           </FadeUp>
           <FadeUp delay={100}>
-            <h1 style={{ fontSize: "clamp(36px, 4vw, 56px)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#fff", marginBottom: "24px" }}>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.03em", color: "#fff", marginBottom: "20px" }}>
               The infrastructure<br />
               powering trusted<br />
               <span style={{ color: "#FF3EA5" }}>cleaning across Africa.</span>
             </h1>
           </FadeUp>
           <FadeUp delay={200}>
-            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "17px", lineHeight: 1.75, maxWidth: "480px", marginBottom: "40px" }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "16px", lineHeight: 1.65, maxWidth: "480px", marginBottom: "32px" }}>
               Elyriq Nova connects verified cleaning professionals with organisations, institutions, and homes — through a structured, accountable, and technology-driven platform.
             </p>
           </FadeUp>
           <FadeUp delay={300}>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "40px", flexWrap: "wrap" }}>
-              <a href="/booking" style={{ padding: "14px 28px", fontSize: "15px", fontWeight: 700, borderRadius: "10px", background: "#FF3EA5", color: "#fff", textDecoration: "none", display: "inline-block", transition: "all 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#e0338e")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#FF3EA5")}>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "32px", flexDirection: isMobile ? "column" : "row" }}>
+              <a href="/booking" style={{ padding: "14px 28px", fontSize: "15px", fontWeight: 700, borderRadius: "10px", background: "#FF3EA5", color: "#fff", textDecoration: "none", textAlign: "center" }}>
                 Request a service →
               </a>
-              <a href="/auth" style={{ padding: "14px 28px", fontSize: "15px", fontWeight: 600, borderRadius: "10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+              <a href="/auth" style={{ padding: "14px 28px", fontSize: "15px", fontWeight: 600, borderRadius: "10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", textAlign: "center" }}>
                 Join as a provider
               </a>
             </div>
           </FadeUp>
           <FadeUp delay={400}>
-            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "16px 20px", flexWrap: "wrap" }}>
               {["Verified providers", "Managed contracts", "Structured operations"].map(t => (
                 <div key={t} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <div style={{ width: "16px", height: "16px", borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", color: "#22c55e", flexShrink: 0 }}>✓</div>
@@ -161,8 +213,7 @@ export default function Home() {
 
         {/* RIGHT — Dashboard preview */}
         <FadeUp delay={200}>
-          <div style={{ background: "#111827", borderRadius: "16px", padding: "20px", border: "1px solid rgba(255,255,255,0.06)", position: "relative" }}>
-            {/* Dashboard header */}
+          <div style={{ background: "#111827", borderRadius: "16px", padding: "20px", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <div>
                 <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "11px", marginBottom: "2px" }}>Operations dashboard</p>
@@ -180,9 +231,9 @@ export default function Home() {
                 { label: "Verified cleaners", value: "186", color: "#22c55e" },
                 { label: "This month", value: "₦2.4M", color: "#3b82f6" },
               ].map(m => (
-                <div key={m.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px" }}>
-                  <p style={{ color: m.color, fontWeight: 800, fontSize: "18px", marginBottom: "2px" }}>{m.value}</p>
-                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>{m.label}</p>
+                <div key={m.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 8px", textAlign: "center" }}>
+                  <p style={{ color: m.color, fontWeight: 800, fontSize: "16px", marginBottom: "2px" }}>{m.value}</p>
+                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "9px", whiteSpace: "nowrap", overflow: "hidden" }}>{m.label}</p>
                 </div>
               ))}
             </div>
@@ -201,9 +252,9 @@ export default function Home() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ color: "#fff", fontSize: "12px", fontWeight: 600, marginBottom: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{job.name}</p>
-                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px" }}>{job.location}</p>
+                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "10px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{job.location}</p>
                   </div>
-                  <div style={{ background: `${job.statusColor}18`, border: `1px solid ${job.statusColor}40`, borderRadius: "999px", padding: "2px 8px", fontSize: "10px", fontWeight: 600, color: job.statusColor, flexShrink: 0 }}>
+                  <div style={{ background: `${job.statusColor}18`, border: `1px solid ${job.statusColor}40`, borderRadius: "999px", padding: "2px 8px", fontSize: "9px", fontWeight: 600, color: job.statusColor, flexShrink: 0 }}>
                     {job.status}
                   </div>
                 </div>
@@ -215,7 +266,7 @@ export default function Home() {
               <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px", marginBottom: "8px", letterSpacing: "0.05em", textTransform: "uppercase" }}>Jobs this week</p>
               <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", height: "48px" }}>
                 {[35, 55, 40, 70, 60, 85, 75].map((h, i) => (
-                  <div key={i} style={{ flex: 1, height: `${h}%`, borderRadius: "3px 3px 0 0", background: i === 5 ? "#FF3EA5" : "rgba(255,62,165,0.25)", transition: "height 0.3s" }} />
+                  <div key={i} style={{ flex: 1, height: `${h}%`, borderRadius: "3px 3px 0 0", background: i === 5 ? "#FF3EA5" : "rgba(255,62,165,0.25)" }} />
                 ))}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px" }}>
@@ -229,18 +280,18 @@ export default function Home() {
       </section>
 
       {/* ── SOCIAL PROOF BAR ── */}
-      <section style={{ background: "#fff", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "28px 56px" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", alignItems: "center", gap: "40px" }}>
-          <p style={{ color: "#9CA3AF", fontSize: "12px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Trusted by</p>
-          <div style={{ display: "flex", gap: "32px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
+      <section style={{ background: "#fff", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: isMobile ? "24px 20px" : "28px 56px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: "24px" }}>
+          <p style={{ color: "#9CA3AF", fontSize: "12px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>Trusted by</p>
+          <div style={{ display: "flex", gap: "20px 24px", alignItems: "center", flex: 1, flexWrap: "wrap" }}>
             {["First Bank", "GTBank", "Sheraton", "NNPC", "Dangote"].map(name => (
-              <span key={name} style={{ color: "#9CA3AF", fontSize: "15px", fontWeight: 700, letterSpacing: "-0.01em" }}>{name}</span>
+              <span key={name} style={{ color: "#9CA3AF", fontSize: "14px", fontWeight: 700 }}>{name}</span>
             ))}
           </div>
-          <div style={{ display: "flex", gap: "32px", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: "24px", width: isMobile ? "100%" : "auto", justifyContent: "space-between", borderTop: isMobile ? "1px solid #F3F4F6" : "none", paddingTop: isMobile ? "16px" : 0 }}>
             {[{ n: "500+", l: "Companies" }, { n: "2,400+", l: "Providers" }, { n: "98%", l: "Satisfaction" }].map(s => (
-              <div key={s.l} style={{ textAlign: "center" }}>
-                <p style={{ fontSize: "18px", fontWeight: 800, color: "#0D1B2A", letterSpacing: "-0.02em" }}>{s.n}</p>
+              <div key={s.l} style={{ textAlign: isMobile ? "left" : "center" }}>
+                <p style={{ fontSize: "16px", fontWeight: 800, color: "#0D1B2A" }}>{s.n}</p>
                 <p style={{ fontSize: "11px", color: "#9CA3AF", fontWeight: 500 }}>{s.l}</p>
               </div>
             ))}
@@ -249,28 +300,26 @@ export default function Home() {
       </section>
 
       {/* ── PLATFORM CAPABILITIES ── */}
-      <section style={{ padding: "120px 56px", background: "#F8F9FA" }}>
+      <section style={{ padding: isMobile ? "60px 20px" : "120px 56px", background: "#F8F9FA" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <FadeUp className="text-center">
-            <div style={{ textAlign: "center", marginBottom: "64px" }}>
-              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px" }}>Platform</p>
-              <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A", marginBottom: "16px" }}>
+          <FadeUp>
+            <div style={{ textAlign: "center", marginBottom: "44px" }}>
+              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Platform</p>
+              <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A", marginBottom: "16px" }}>
                 Not just a booking app.<br />A full operations platform.
               </h2>
-              <p style={{ color: "#6B7280", fontSize: "17px", maxWidth: "520px", margin: "0 auto", lineHeight: 1.7 }}>
+              <p style={{ color: "#6B7280", fontSize: "16px", maxWidth: "520px", margin: "0 auto", lineHeight: 1.6 }}>
                 Built for the way professional cleaning actually works — at scale, across multiple sites, with accountability at every step.
               </p>
             </div>
           </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "16px" }}>
             {FEATURES.map((f, i) => (
-              <FadeUp key={f.title} delay={i * 60}>
-                <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "14px", padding: "28px", transition: "all 0.3s", cursor: "default" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#FF3EA5"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 16px 40px rgba(255,62,165,0.08)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#E5E7EB"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
-                  <div style={{ fontSize: "28px", marginBottom: "16px" }}>{f.icon}</div>
-                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0D1B2A", marginBottom: "8px", letterSpacing: "-0.01em" }}>{f.title}</h3>
-                  <p style={{ color: "#6B7280", fontSize: "14px", lineHeight: 1.7 }}>{f.desc}</p>
+              <FadeUp key={f.title} delay={i * 40}>
+                <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "14px", padding: "24px" }}>
+                  <div style={{ fontSize: "28px", marginBottom: "14px" }}>{f.icon}</div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0D1B2A", marginBottom: "8px" }}>{f.title}</h3>
+                  <p style={{ color: "#6B7280", fontSize: "14px", lineHeight: 1.6 }}>{f.desc}</p>
                 </div>
               </FadeUp>
             ))}
@@ -279,53 +328,53 @@ export default function Home() {
       </section>
 
       {/* ── WHO IT'S FOR ── */}
-      <section style={{ background: "#0D1B2A", padding: "120px 56px" }}>
+      <section style={{ background: "#0D1B2A", padding: isMobile ? "60px 20px" : "120px 56px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeUp>
-            <div style={{ textAlign: "center", marginBottom: "64px" }}>
-              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px" }}>Who it&apos;s for</p>
-              <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#fff", marginBottom: "16px" }}>
+            <div style={{ textAlign: "center", marginBottom: "44px" }}>
+              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Who it&apos;s for</p>
+              <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#fff", marginBottom: "16px" }}>
                 Built for both sides<br />of the marketplace.
               </h2>
             </div>
           </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "20px" }}>
             <FadeUp>
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "36px", height: "100%" }}>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "28px" }}>
                 <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "#FF3EA5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", marginBottom: "20px" }}>🏢</div>
-                <h3 style={{ color: "#fff", fontSize: "22px", fontWeight: 700, marginBottom: "12px", letterSpacing: "-0.02em" }}>For organisations</h3>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "15px", lineHeight: 1.7, marginBottom: "24px" }}>
+                <h3 style={{ color: "#fff", fontSize: "20px", fontWeight: 700, marginBottom: "12px" }}>For organisations</h3>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, marginBottom: "20px" }}>
                   Banks, hospitals, schools, hotels, event venues, and government facilities that need structured, reliable, and accountable cleaning operations.
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px" }}>
                   {["Corporate facility management", "Event cleaning contracts", "Institutional cleaning programs", "Multi-site operations"].map(item => (
                     <div key={item} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div style={{ width: "18px", height: "18px", borderRadius: "50%", background: "rgba(255,62,165,0.2)", border: "1px solid rgba(255,62,165,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", color: "#FF3EA5", flexShrink: 0 }}>✓</div>
-                      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px" }}>{item}</span>
+                      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "13px" }}>{item}</span>
                     </div>
                   ))}
                 </div>
-                <a href="/corporate" style={{ display: "inline-block", padding: "12px 24px", background: "#FF3EA5", color: "#fff", fontWeight: 700, borderRadius: "8px", textDecoration: "none", fontSize: "14px" }}>
+                <a href="/corporate" style={{ display: "block", textAlign: "center", padding: "12px 24px", background: "#FF3EA5", color: "#fff", fontWeight: 700, borderRadius: "8px", textDecoration: "none", fontSize: "14px" }}>
                   Request a service →
                 </a>
               </div>
             </FadeUp>
-            <FadeUp delay={150}>
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "36px", height: "100%" }}>
+            <FadeUp delay={100}>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "28px" }}>
                 <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "rgba(255,62,165,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", marginBottom: "20px" }}>🧹</div>
-                <h3 style={{ color: "#fff", fontSize: "22px", fontWeight: 700, marginBottom: "12px", letterSpacing: "-0.02em" }}>For cleaning professionals</h3>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "15px", lineHeight: 1.7, marginBottom: "24px" }}>
+                <h3 style={{ color: "#fff", fontSize: "20px", fontWeight: 700, marginBottom: "12px" }}>For cleaning professionals</h3>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", lineHeight: 1.6, marginBottom: "20px" }}>
                   Individual cleaners and cleaning companies looking to access quality clients, grow revenue, and build a credible professional reputation.
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px" }}>
                   {["Individual cleaner profiles", "Cleaning company listings", "Corporate contract access", "Earnings and growth tools"].map(item => (
                     <div key={item} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div style={{ width: "18px", height: "18px", borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", color: "rgba(255,255,255,0.5)", flexShrink: 0 }}>✓</div>
-                      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px" }}>{item}</span>
+                      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "13px" }}>{item}</span>
                     </div>
                   ))}
                 </div>
-                <a href="/auth" style={{ display: "inline-block", padding: "12px 24px", border: "1px solid rgba(255,62,165,0.4)", color: "#FF3EA5", fontWeight: 700, borderRadius: "8px", textDecoration: "none", fontSize: "14px" }}>
+                <a href="/auth" style={{ display: "block", textAlign: "center", padding: "12px 24px", border: "1px solid rgba(255,62,165,0.4)", color: "#FF3EA5", fontWeight: 700, borderRadius: "8px", textDecoration: "none", fontSize: "14px" }}>
                   Join our network →
                 </a>
               </div>
@@ -335,34 +384,34 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section style={{ padding: "120px 56px", background: "#fff" }}>
+      <section style={{ padding: isMobile ? "60px 20px" : "120px 56px", background: "#fff" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeUp>
-            <div style={{ textAlign: "center", marginBottom: "64px" }}>
-              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px" }}>Process</p>
-              <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A" }}>
+            <div style={{ textAlign: "center", marginBottom: "44px" }}>
+              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Process</p>
+              <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A" }}>
                 Structured from start to finish.
               </h2>
             </div>
           </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "32px" : "48px" }}>
             <div>
-              <p style={{ fontSize: "12px", fontWeight: 700, color: "#FF3EA5", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "24px" }}>For clients</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "#FF3EA5", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "20px" }}>For clients</p>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {CLIENT_STEPS.map((step, i) => (
-                  <FadeUp key={step.n} delay={i * 80}>
-                    <div style={{ display: "flex", gap: "16px", paddingBottom: "28px", position: "relative" }}>
+                  <FadeUp key={step.n} delay={i * 40}>
+                    <div style={{ display: "flex", gap: "16px", paddingBottom: "20px" }}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#0D1B2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#0D1B2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#fff" }}>
                           {step.n}
                         </div>
                         {i < CLIENT_STEPS.length - 1 && (
-                          <div style={{ width: "1px", flex: 1, minHeight: "20px", background: "#E5E7EB", marginTop: "6px" }} />
+                          <div style={{ width: "1px", flex: 1, minHeight: "16px", background: "#E5E7EB", marginTop: "6px" }} />
                         )}
                       </div>
-                      <div style={{ paddingTop: "6px" }}>
+                      <div style={{ paddingTop: "4px" }}>
                         <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2A", marginBottom: "4px" }}>{step.title}</h4>
-                        <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.6 }}>{step.desc}</p>
+                        <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.5 }}>{step.desc}</p>
                       </div>
                     </div>
                   </FadeUp>
@@ -370,22 +419,22 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "24px" }}>For cleaners & companies</p>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "20px" }}>For cleaners & companies</p>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {CLEANER_STEPS.map((step, i) => (
-                  <FadeUp key={step.n} delay={i * 80}>
-                    <div style={{ display: "flex", gap: "16px", paddingBottom: "28px" }}>
+                  <FadeUp key={step.n} delay={i * 40}>
+                    <div style={{ display: "flex", gap: "16px", paddingBottom: "20px" }}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1px solid #E5E7EB", background: "#F8F9FA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#6B7280", flexShrink: 0 }}>
+                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", border: "1px solid #E5E7EB", background: "#F8F9FA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, color: "#6B7280" }}>
                           {step.n}
                         </div>
                         {i < CLEANER_STEPS.length - 1 && (
-                          <div style={{ width: "1px", flex: 1, minHeight: "20px", background: "#E5E7EB", marginTop: "6px" }} />
+                          <div style={{ width: "1px", flex: 1, minHeight: "16px", background: "#E5E7EB", marginTop: "6px" }} />
                         )}
                       </div>
-                      <div style={{ paddingTop: "6px" }}>
+                      <div style={{ paddingTop: "4px" }}>
                         <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#0D1B2A", marginBottom: "4px" }}>{step.title}</h4>
-                        <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.6 }}>{step.desc}</p>
+                        <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.5 }}>{step.desc}</p>
                       </div>
                     </div>
                   </FadeUp>
@@ -397,22 +446,22 @@ export default function Home() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: "120px 56px", background: "#F8F9FA" }}>
+      <section style={{ padding: isMobile ? "60px 20px" : "120px 56px", background: "#F8F9FA" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeUp>
-            <div style={{ textAlign: "center", marginBottom: "64px" }}>
-              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "14px" }}>Social proof</p>
-              <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A" }}>
+            <div style={{ textAlign: "center", marginBottom: "44px" }}>
+              <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Social proof</p>
+              <h2 style={{ fontSize: "clamp(26px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#0D1B2A" }}>
                 Trusted by organisations<br />across Africa.
               </h2>
             </div>
           </FadeUp>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: "20px" }}>
             {TESTIMONIALS.map((t, i) => (
-              <FadeUp key={t.name} delay={i * 80}>
-                <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "14px", padding: "28px", height: "100%" }}>
-                  <div style={{ color: "#FF3EA5", fontSize: "28px", fontWeight: 900, lineHeight: 1, marginBottom: "16px" }}>&ldquo;</div>
-                  <p style={{ color: "#374151", fontSize: "14px", lineHeight: 1.8, marginBottom: "24px" }}>{t.quote}</p>
+              <FadeUp key={t.name} delay={i * 40}>
+                <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "14px", padding: "24px" }}>
+                  <div style={{ color: "#FF3EA5", fontSize: "28px", fontWeight: 900, lineHeight: 1, marginBottom: "12px" }}>&ldquo;</div>
+                  <p style={{ color: "#374151", fontSize: "14px", lineHeight: 1.6, marginBottom: "20px" }}>{t.quote}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#0D1B2A", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: "13px", flexShrink: 0 }}>
                       {t.initials}
@@ -430,22 +479,22 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section style={{ padding: "40px 56px 80px", background: "#F8F9FA" }}>
+      <section style={{ padding: "20px 20px 60px", background: "#F8F9FA" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeUp>
-            <div style={{ background: "#0D1B2A", borderRadius: "20px", padding: "72px 60px", textAlign: "center" }}>
+            <div style={{ background: "#0D1B2A", borderRadius: "20px", padding: isMobile ? "48px 24px" : "72px 60px", textAlign: "center" }}>
               <p style={{ color: "#FF3EA5", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "16px" }}>Get started</p>
-              <h2 style={{ fontSize: "clamp(28px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#fff", marginBottom: "16px" }}>
+              <h2 style={{ fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: "-0.025em", color: "#fff", marginBottom: "16px" }}>
                 Ready to raise the standard<br />of cleaning in Africa?
               </h2>
-              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "16px", maxWidth: "480px", margin: "0 auto 40px", lineHeight: 1.7 }}>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "15px", maxWidth: "480px", margin: "0 auto 32px", lineHeight: 1.6 }}>
                 Join thousands of organisations and professionals already using Elyriq Nova.
               </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-                <a href="/booking" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 700, borderRadius: "10px", background: "#FF3EA5", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexDirection: isMobile ? "column" : "row" }}>
+                <a href="/booking" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 700, borderRadius: "10px", background: "#FF3EA5", color: "#fff", textDecoration: "none", textAlign: "center" }}>
                   Request a service
                 </a>
-                <a href="/auth" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, borderRadius: "10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", display: "inline-block" }}>
+                <a href="/auth" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 600, borderRadius: "10px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#fff", textDecoration: "none", textAlign: "center" }}>
                   Join as a provider
                 </a>
               </div>
@@ -455,15 +504,15 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#0D1B2A", padding: "72px 56px 40px" }}>
+      <footer style={{ background: "#0D1B2A", padding: isMobile ? "48px 20px 32px" : "72px 56px 40px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "48px", marginBottom: "56px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "48px" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
                 <Image src="/elyriq-nova-logo.jpeg" alt="Elyriq Nova" width={36} height={36} style={{ borderRadius: "50%" }} />
                 <span style={{ fontWeight: 700, fontSize: "16px", color: "#FF3EA5" }}>Elyriq Nova</span>
               </div>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px", lineHeight: 1.8, maxWidth: "240px", marginBottom: "20px" }}>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px", lineHeight: 1.7, maxWidth: "240px", marginBottom: "16px" }}>
                 Africa&apos;s technology-enabled cleaning marketplace. Connecting organisations with verified cleaning professionals.
               </p>
               <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "12px" }}>Lagos · Abuja · Port Harcourt</p>
@@ -474,23 +523,22 @@ export default function Home() {
               { heading: "Company", links: ["About us", "Blog", "Careers", "Press", "Contact"] },
             ].map(col => (
               <div key={col.heading}>
-                <p style={{ fontWeight: 700, fontSize: "13px", color: "#fff", marginBottom: "20px", letterSpacing: "0.02em" }}>{col.heading}</p>
-                {col.links.map(link => (
-                  <a key={link} href="#" style={{ display: "block", color: "rgba(255,255,255,0.4)", fontSize: "13px", marginBottom: "12px", textDecoration: "none", transition: "color 0.2s" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}>
-                    {link}
-                  </a>
-                ))}
+                <p style={{ fontWeight: 700, fontSize: "13px", color: "#fff", marginBottom: "16px", letterSpacing: "0.02em" }}>{col.heading}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {col.links.map(link => (
+                    <a key={link} href="#" style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", textDecoration: "none" }}>
+                      {link}
+                    </a>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-            <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "13px" }}>© 2025 Elyriq Nova. All rights reserved.</p>
-            <div style={{ display: "flex", gap: "24px" }}>
-              {["Privacy Policy", "Terms of Service", "Cookie Policy"].map(item => (
-                <a key={item} href="#" style={{ color: "rgba(255,255,255,0.25)", fontSize: "13px", textDecoration: "none" }}>{item}</a>
-              ))}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "24px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px" }}>&copy; 2026 Elyriq Nova. All rights reserved.</span>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <a href="#" style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textDecoration: "none" }}>Privacy Policy</a>
+              <a href="#" style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", textDecoration: "none" }}>Terms of Service</a>
             </div>
           </div>
         </div>
